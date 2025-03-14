@@ -13,7 +13,7 @@ CHARACTER_SET = string.ascii_letters + string.digits  # "ABCDEFGHIJKLMNOPQRSTUVW
 EMBEDDING_DIM = 512  # Увеличили размерность
 HIDDEN_UNITS = 1024  # Больше нейронов в слоях
 LEARNING_RATE = 0.0005
-BATCH_SIZE = 32
+BATCH_SIZE = 5
 
 DATASET_FILE = "dataset.csv"
 MODEL_PATH = "sha256_decoder.keras"
@@ -128,7 +128,7 @@ if __name__ == "__main__":
         y_train_one_hot = tf.keras.utils.to_categorical(y_train, num_classes=len(CHARACTER_SET))
 
         print(f"🚀 Обучение на {len(dataset)} примерах...")
-        model.fit(x_train, y_train_one_hot, epochs=25, batch_size=BATCH_SIZE)
+        model.fit(x_train, y_train_one_hot, epochs=500, batch_size=BATCH_SIZE)
 
         save_model(model)  # Сохранение модели после каждой итерации
 

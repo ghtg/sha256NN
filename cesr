@@ -1,0 +1,51 @@
+import time
+import base64
+import hashlib
+from Crypto.Cipher import AES, Blowfish
+from Crypto.Util.Padding import pad, unpad
+
+def get_time_based_key(base_key: str) -> bytes:
+    """
+    Генерирует ключ на основе базового ключа и текущего времени (в секундах).
+    """
+    current_time = int(time.time())  # Берём текущее время в секундах
+    dynamic_key = f"{base_key}{current_time}".encode()
+    return hashlib.sha256(dynamic_key).digest()  # Хэшируем для получения фиксированной длины ключа
+
+def encrypt(plain_text: str) -> str:
+    aes_key = get_time_based_key("MAKV2SPBNI99212")[:32]  # 32 байта для AES
+    iv = aes_key[:16]  # Первые 16 байт для IV
+
+    cipher_aes = AES.new(aes_key, AES.MODE_CBC, iv)
+    encrypted_aes = cipher_aes.encrypt(pad(plain_text.encode(), AES.block_size))
+    
+    blowfish_key = get_time_based_key("BLOWFISHKEY")[:16]  # 16 байт для Blowfish
+    cipher_blowfish = Blowfish.new(blowfish_key, Blowfish.MODE_CBC, iv[:8])  # Blowfish IV = 8 байт
+    encrypted_blowfish = cipher_blowfish.encrypt(pad(encrypted_aes, Blowfish.block_size))
+    
+    return base64.b64encode(encrypted_blowfish).decode()
+
+def decrypt(encrypted_text: str) -> str:
+    encrypted_blowfish = base64.b64decode(encrypted_text)
+    
+    blowfish_key = get_time_based_key("BLOWFISHKEY")[:16]
+    iv = blowfish_key[:8]  # Первые 8 байт для IV Blowfish
+    cipher_blowfish = Blowfish.new(blowfish_key, Blowfish.MODE_CBC, iv)
+    decrypted_blowfish = unpad(cipher_blowfish.decrypt(encrypted_blowfish), Blowfish.block_size)
+    
+    aes_key = get_time_based_key("MAKV2SPBNI99212")[:32]
+    iv = aes_key[:16]
+    cipher_aes = AES.new(aes_key, AES.MODE_CBC, iv)
+    decrypted_aes = unpad(cipher_aes.decrypt(decrypted_blowfish), AES.block_size)
+    
+    return decrypted_aes.decode()
+
+# Тестирование
+if __name__ == "__main__":
+    message = "Secret Message"
+    encrypted = encrypt(message)
+    print(f"Encrypted: {encrypted}")
+    
+    # Расшифровка должна происходить в пределах одного времени (1 секунда)
+    decrypted = decrypt(encrypted)
+    print(f"Decrypted: {decrypted}")

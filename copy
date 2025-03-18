@@ -1,0 +1,27 @@
+def predict_text(model, hash_str, idx_to_char):
+    """Делает предсказание для заданного SHA-256 хэша."""
+    # Преобразуем хэш в числовой вектор
+    input_vector = np.array([ord(c) for c in hash_str]).reshape(1, -1)
+    
+    # Получаем предсказание от модели
+    prediction = model.predict(input_vector)[0]  # (MAX_SEQ_LENGTH, len(CHARACTER_SET))
+    
+    # Преобразуем one-hot вероятности в индексы символов
+    predicted_indices = np.argmax(prediction, axis=1)
+    
+    # Преобразуем индексы в символы
+    predicted_text = ''.join(idx_to_char[idx] for idx in predicted_indices)
+    
+    return predicted_text
+
+# Пример использования
+if __name__ == "__main__":
+    test_text = generate_random_text()
+    test_hash = sha256_hash(test_text)
+
+    print(f"🔍 Проверяем на примере:")
+    print(f"Исходный текст: {test_text}")
+    print(f"SHA-256 хэш: {test_hash}")
+
+    predicted = predict_text(model, test_hash, idx_to_char)
+    print(f"🔮 Предсказание модели: {predicted}")
